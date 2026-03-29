@@ -64,6 +64,26 @@ celery_app.conf.beat_schedule = {
         "task": "app.tasks.notification_tasks.send_pending_notifications",
         "schedule": crontab(minute="*/30"),
     },
+    # Phase 4: Run recommendation agent every 4 hours
+    "run-recommendation-agent": {
+        "task": "app.tasks.agent_tasks.run_recommendation_agent",
+        "schedule": crontab(minute=0, hour="*/4"),
+    },
+    # Phase 4: Run price tracking agent every 30 minutes
+    "run-price-tracking-agent": {
+        "task": "app.tasks.agent_tasks.run_price_tracking_agent",
+        "schedule": crontab(minute="*/30"),
+    },
+    # Phase 4: Run notification agent every 15 minutes
+    "run-notification-agent": {
+        "task": "app.tasks.agent_tasks.run_notification_agent",
+        "schedule": crontab(minute="*/15"),
+    },
+    # Phase 4: Run scraping coordinator every 2 hours
+    "run-scraping-coordinator": {
+        "task": "app.tasks.agent_tasks.run_scraping_coordinator",
+        "schedule": crontab(minute=0, hour="*/2"),
+    },
 }
 
 logger.info("celery_app_initialized", broker=settings.CELERY_BROKER_URL)

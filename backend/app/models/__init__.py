@@ -10,6 +10,10 @@ from app.models.price_alert import PriceAlert
 from app.models.notification import Notification
 from app.models.recommendation import Recommendation
 from app.models.scraping_job import ScrapingJob
+from app.models.agent_execution import AgentExecution
+from app.models.recommendation_feedback import RecommendationFeedback
+from app.models.notification_preferences import UserNotificationPreferences
+from app.models.price_analytics import PriceAnalytics
 
 __all__ = [
     "Base",
@@ -22,4 +26,8 @@ __all__ = [
     "Notification",
     "Recommendation",
     "ScrapingJob",
+    "AgentExecution",
+    "RecommendationFeedback",
+    "UserNotificationPreferences",
+    "PriceAnalytics",
 ]
