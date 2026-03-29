@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: pricecomp_postgres
+    environment:
+      POSTGRES_USER: pricecomp
+      POSTGRES_PASSWORD: pricecomp123
+      POSTGRES_DB: pricecomparator
+    ports:
+      - "5433:5432"  # Changed to 5433 to avoid conflict with local PostgreSQL
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pricecomp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: pricecomp_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: pricecomp_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: pricecomp
+      RABBITMQ_DEFAULT_PASS: pricecomp123
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend (uncomment when ready to run)
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: pricecomp_backend
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     - DATABASE_URL=postgresql+asyncpg://pricecomp:pricecomp123@postgres:5432/pricecomparator
+  #     - REDIS_URL=redis://redis:6379/0
+  #     - CELERY_BROKER_URL=amqp://pricecomp:pricecomp123@rabbitmq:5672/
+  #   volumes:
+  #     - ./backend:/app
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     rabbitmq:
+  #       condition: service_healthy
+
+  # Celery Worker (uncomment when ready)
+  # celery_worker:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: pricecomp_celery_worker
+  #   command: celery -A app.tasks.celery_app worker --loglevel=info
+  #   environment:
+  #     - DATABASE_URL=postgresql+asyncpg://pricecomp:pricecomp123@postgres:5432/pricecomparator
+  #     - REDIS_URL=redis://redis:6379/0
+  #     - CELERY_BROKER_URL=amqp://pricecomp:pricecomp123@rabbitmq:5672/
+  #   volumes:
+  #     - ./backend:/app
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #     - rabbitmq
+
+  # Celery Beat (scheduler - uncomment when ready)
+  # celery_beat:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: pricecomp_celery_beat
+  #   command: celery -A app.tasks.celery_app beat --loglevel=info
+  #   environment:
+  #     - DATABASE_URL=postgresql+asyncpg://pricecomp:pricecomp123@postgres:5432/pricecomparator
+  #     - REDIS_URL=redis://redis:6379/0
+  #     - CELERY_BROKER_URL=amqp://pricecomp:pricecomp123@rabbitmq:5672/
+  #   volumes:
+  #     - ./backend:/app
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #     - rabbitmq
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
