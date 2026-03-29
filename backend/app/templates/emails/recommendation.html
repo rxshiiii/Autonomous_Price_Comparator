@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}New Recommendations - {{ notification.title }}{% endblock %}
+
+{% block header_title %}💡 Personalized Recommendations{% endblock %}
+
+{% block main_content %}
+<div class="notification-box">
+    <h2 class="notification-title">We found something you might like!</h2>
+    <p class="notification-message">
+        Based on your interests and browsing history, our AI has selected some products that match your preferences.
+    </p>
+</div>
+
+{% if notification.data.recommendations %}
+<div style="margin: 30px 0;">
+    <h3 style="color: #374151; margin-bottom: 20px;">Recommended for You:</h3>
+
+    {% for recommendation in notification.data.recommendations[:3] %}
+    <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 15px 0; background-color: #fafafa;">
+        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+            {% if recommendation.product_image %}
+            <img src="{{ recommendation.product_image }}" alt="{{ recommendation.product_name }}"
+                 style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; margin-right: 15px;">
+            {% endif %}
+            <div>
+                <h4 style="margin: 0 0 5px 0; color: #1f2937;">{{ recommendation.product_name }}</h4>
+                <div style="color: #059669; font-size: 18px; font-weight: 600;">
+                    ₹{{ "%.0f"|format(recommendation.price) }}
+                </div>
+                {% if recommendation.rating %}
+                <div style="color: #6b7280; font-size: 14px;">
+                    {{ recommendation.rating }}/5 ⭐ ({{ recommendation.reviews_count }} reviews)
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="background-color: #f0f9ff; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+            <strong>Why we recommend this:</strong> {{ recommendation.reasoning }}
+        </div>
+
+        <div style="text-align: center;">
+            <a href="{{ recommendation.product_url }}"
+               style="background-color: #3b82f6; color: white; padding: 8px 20px; text-decoration: none; border-radius: 4px; font-size: 14px;">
+                View Product
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div style="text-align: center; margin: 30px 0;">
+    <a href="{{ app_url }}/recommendations" class="cta-button">
+        🔍 View All Recommendations
+    </a>
+</div>
+{% endblock %}
+
+{% block additional_content %}
+<div style="background-color: #f0f9ff; border: 2px solid #93c5fd; border-radius: 8px; padding: 20px; margin: 20px 0;">
+    <h4 style="color: #1e40af; margin-bottom: 10px;">🎯 How do recommendations work?</h4>
+    <p style="color: #1e3a8a; margin: 0; font-size: 14px;">
+        Our AI analyzes your preferences, browsing history, and current market trends to find products
+        that match your interests and offer the best value for money.
+    </p>
+</div>
+
+<div style="margin-top: 20px; font-size: 14px; color: #6b7280;">
+    <strong>💡 Tip:</strong> The more you interact with our recommendations, the better they become!
+</div>
+{% endblock %}

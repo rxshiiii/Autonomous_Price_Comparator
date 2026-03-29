@@ -9,6 +9,9 @@ from app.agents.price_tracking_agent import PriceTrackingAgent
 from app.agents.notification_agent import NotificationAgent
 from app.agents.scraping_coordinator_agent import ScrapingCoordinatorAgent
 from app.models.agent_execution import AgentExecution
+from app.models.notification import Notification
+from app.models.user import User
+from app.services.email_service import email_service
 from datetime import datetime
 import structlog
 from decimal import Decimal
@@ -176,4 +179,163 @@ def run_scraping_coordinator(self):
 
     except Exception as exc:
         logger.error("scraping_coordinator_task_error", error=str(exc))
+        raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
+
+
+# Phase 5: Email Notification Tasks
+
+@celery_app.task(bind=True, max_retries=3)
+def send_notification_email_task(self, user_id: str, notification_id: str):
+    """
+    Send notification email asynchronously.
+
+    Args:
+        user_id: User UUID string
+        notification_id: Notification UUID string
+    """
+    try:
+        async def execute():
+            async with AsyncSessionLocal() as db:
+                # Get user
+                user_result = await db.execute(
+                    select(User).where(User.id == user_id)
+                )
+                user = user_result.scalar_one_or_none()
+
+                if not user:
+                    logger.error("email_task_user_not_found", user_id=user_id)
+                    return {"success": False, "error": "User not found"}
+
+                # Get notification
+                notification_result = await db.execute(
+                    select(Notification).where(Notification.id == notification_id)
+                )
+                notification = notification_result.scalar_one_or_none()
+
+                if not notification:
+                    logger.error("email_task_notification_not_found", notification_id=notification_id)
+                    return {"success": False, "error": "Notification not found"}
+
+                # Send email
+                success = await email_service.send_notification_email(user, notification)
+
+                logger.info(
+                    "email_notification_task_completed",
+                    user_id=user_id,
+                    notification_id=notification_id,
+                    success=success
+                )
+
+                return {
+                    "success": success,
+                    "user_id": user_id,
+                    "notification_id": notification_id
+                }
+
+        return _async_task_wrapper(execute())
+
+    except Exception as exc:
+        logger.error(
+            "email_notification_task_error",
+            error=str(exc),
+            user_id=user_id,
+            notification_id=notification_id
+        )
+        raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
+
+
+@celery_app.task(bind=True, max_retries=3)
+def send_price_drop_email_task(self, user_id: str, product_data: dict, price_change: dict):
+    """
+    Send price drop alert email asynchronously.
+
+    Args:
+        user_id: User UUID string
+        product_data: Product information dictionary
+        price_change: Price change information dictionary
+    """
+    try:
+        async def execute():
+            async with AsyncSessionLocal() as db:
+                # Get user
+                user_result = await db.execute(
+                    select(User).where(User.id == user_id)
+                )
+                user = user_result.scalar_one_or_none()
+
+                if not user:
+                    logger.error("price_drop_email_user_not_found", user_id=user_id)
+                    return {"success": False, "error": "User not found"}
+
+                # Send price drop email
+                success = await email_service.send_price_drop_alert(user, product_data, price_change)
+
+                logger.info(
+                    "price_drop_email_task_completed",
+                    user_id=user_id,
+                    product_name=product_data.get("name"),
+                    success=success
+                )
+
+                return {
+                    "success": success,
+                    "user_id": user_id,
+                    "product_name": product_data.get("name")
+                }
+
+        return _async_task_wrapper(execute())
+
+    except Exception as exc:
+        logger.error(
+            "price_drop_email_task_error",
+            error=str(exc),
+            user_id=user_id
+        )
+        raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
+
+
+@celery_app.task(bind=True, max_retries=2)
+def send_weekly_summary_email_task(self, user_id: str, summary_data: dict):
+    """
+    Send weekly summary email asynchronously.
+
+    Args:
+        user_id: User UUID string
+        summary_data: Weekly summary data dictionary
+    """
+    try:
+        async def execute():
+            async with AsyncSessionLocal() as db:
+                # Get user
+                user_result = await db.execute(
+                    select(User).where(User.id == user_id)
+                )
+                user = user_result.scalar_one_or_none()
+
+                if not user:
+                    logger.error("weekly_summary_email_user_not_found", user_id=user_id)
+                    return {"success": False, "error": "User not found"}
+
+                # Send weekly summary email
+                success = await email_service.send_weekly_summary(user, summary_data)
+
+                logger.info(
+                    "weekly_summary_email_task_completed",
+                    user_id=user_id,
+                    success=success
+                )
+
+                return {
+                    "success": success,
+                    "user_id": user_id
+                }
+
+        return _async_task_wrapper(execute())
+
+    except Exception as exc:
+        logger.error(
+            "weekly_summary_email_task_error",
+            error=str(exc),
+            user_id=user_id
+        )
         raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))

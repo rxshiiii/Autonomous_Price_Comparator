@@ -3,6 +3,10 @@ fastapi==0.115.0
 uvicorn[standard]==0.32.0
 python-multipart==0.0.18
 
+# WebSocket and Real-Time (Phase 5)
+websockets==12.0
+python-socketio==5.11.0
+
 # Database
 sqlalchemy[asyncio]==2.0.36
 asyncpg==0.30.0
@@ -12,6 +16,10 @@ psycopg2-binary==2.9.10
 # Redis and Caching
 redis==5.2.0
 hiredis==3.0.0
+
+# Email Integration (Phase 5)
+sendgrid==6.11.0
+jinja2==3.1.4
 
 # Celery and Task Queue
 celery==5.4.0
