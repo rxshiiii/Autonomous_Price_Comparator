@@ -2,7 +2,7 @@
 API v1 router - combines all endpoint routers.
 """
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth, products, price_alerts, websockets
+from app.api.v1.endpoints import auth, products, price_alerts, websockets, dashboard, onboarding
 
 api_router = APIRouter()
 
@@ -17,6 +17,12 @@ api_router.include_router(price_alerts.router, prefix="/price-alerts", tags=["Pr
 
 # Include WebSocket routes (Phase 5)
 api_router.include_router(websockets.router, prefix="/ws", tags=["WebSockets"])
+
+# Include dashboard routes (Phase 6)
+api_router.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
+
+# Include onboarding routes (Phase 6)
+api_router.include_router(onboarding.router, prefix="/onboarding", tags=["Onboarding"])
 
 # Additional routers will be added here as we implement them:
 # api_router.include_router(users.router, prefix="/users", tags=["Users"])
